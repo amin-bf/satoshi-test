@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: satoshi-auth-mongo-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: satoshi-auth-mongo
+  template:
+    metadata:
+      labels:
+        app: satoshi-auth-mongo
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: satoshi-auth-mongo
+          image: mongo:4.4
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "auth_dbu"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "S3cr3tPasvv0rd"
+          volumeMounts:
+            - mountPath: /data/db
+              name: satoshi-auth-mongo-vol
+      volumes:
+        - name: satoshi-auth-mongo-vol
+          hostPath:
+            path: /home/amin/projects/environments/satoshi/src/auth-mongo
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: satoshi-auth-mongo-srv
+spec:
+  selector:
+    app: satoshi-auth-mongo
+  type: ClusterIP
+  ports:
+    - name: satoshi-auth-mongo
+      protocol: TCP
+      port: 27017
+      targetPort: 27017

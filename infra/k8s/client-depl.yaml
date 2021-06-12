@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: satoshi-client-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: satoshi-client
+  template:
+    metadata:
+      labels:
+        app: satoshi-client
+    spec:
+      # securityContext:
+      #   runAsUser: 1000
+      #   runAsGroup: 1000
+      #   fsGroup: 1000
+      containers:
+        - name: satoshi-client
+          image: satoshi_client:0.0.1
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: client-vol
+            - mountPath: /etc/nginx/conf.d
+              name: nginx-vol
+      volumes:
+        - name: client-vol
+          hostPath:
+            path: /home/amin/projects/environments/satoshi/src/client/build
+            type: DirectoryOrCreate
+        - name: nginx-vol
+          hostPath:
+            path: /home/amin/projects/environments/satoshi/infra/nginx/conf.d
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: satoshi-client-srv
+spec:
+  selector:
+    app: satoshi-client
+  type: ClusterIP
+  ports:
+    - name: satoshi-client
+      protocol: TCP
+      port: 80
+      targetPort: 80

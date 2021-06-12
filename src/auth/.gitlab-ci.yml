@@ -1,0 +1,66 @@
+image: node:12
+
+stages:
+  - local install
+  - local test
+  - pull server
+  - install server
+  - deploy server
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+
+local install:
+  stage: local install
+  only:
+    - master
+    - merge_requests
+  allow_failure: false
+  script:
+    - npm i npm-cli-login -g
+    - export NPM_REGISTRY="${NPM_URL}"
+    - npm-cli-login -u ${NPM_USER} -p "${NPM_PASSWORD}" -e ${NPM_EMAIL}
+    - npm set registry ${NPM_URL}
+    - npm i
+    - npm set registry https://registry.npmjs.org/
+    - npm i mongodb-memory-server
+
+local test:
+  stage: local test
+  only:
+    - master
+    - merge_requests
+  allow_failure: false
+  script:
+    - npm run test
+
+pull server:
+  stage: pull server
+  only:
+    - master
+    - merge_requests
+  allow_failure: false
+  when: manual
+  script:
+    - ${SSH_CONNECT_NEWSERVO} "cd myservo/src/auth && git reset --hard"
+    - ${SSH_CONNECT_NEWSERVO} "cd myservo/src/auth && git pull origin master"
+
+install server:
+  stage: install server
+  only:
+    - master
+    - merge_requests
+  allow_failure: false
+  script:
+    - ${SSH_CONNECT_NEWSERVO} "cd myservo/src/auth && npm i --only-prod"
+
+deploy server:
+  stage: deploy server
+  only:
+    - master
+    - merge_requests
+  allow_failure: false
+  script:
+    - ${SSH_CONNECT_NEWSERVO} "kubectl rollout restart deployment auth-depl"

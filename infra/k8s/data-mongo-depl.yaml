@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: satoshi-data-mongo-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: satoshi-data-mongo
+  template:
+    metadata:
+      labels:
+        app: satoshi-data-mongo
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: satoshi-data-mongo
+          image: mongo:4.4
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "data_dbu"
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: "S3cr3tPasvv0rd"
+          volumeMounts:
+            - mountPath: /data/db
+              name: satoshi-data-mongo-vol
+      volumes:
+        - name: satoshi-data-mongo-vol
+          hostPath:
+            path: /home/amin/projects/environments/satoshi/src/data-mongo
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: satoshi-data-mongo-srv
+spec:
+  selector:
+    app: satoshi-data-mongo
+  type: ClusterIP
+  ports:
+    - name: satoshi-data-mongo
+      protocol: TCP
+      port: 27017
+      targetPort: 27017

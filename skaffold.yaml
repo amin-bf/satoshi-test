@@ -1,0 +1,31 @@
+apiVersion: skaffold/v2beta13
+kind: Config
+metadata:
+  name: satoshi
+build:
+  local:
+    push: false
+  artifacts:
+    - image: satoshi_client
+      context: src/client
+      docker:
+        dockerfile: Dockerfile
+    - image: satoshi_auth
+      context: src/auth
+      docker:
+        dockerfile: Dockerfile
+    - image: satoshi_data
+      context: src/data
+      docker:
+        dockerfile: Dockerfile
+deploy:
+  kubectl:
+    manifests:
+      - infra/k8s/client-depl.yaml
+      - infra/k8s/auth-depl.yaml
+      - infra/k8s/auth-mongo-depl.yaml
+      - infra/k8s/data-depl.yaml
+      - infra/k8s/data-mongo-depl.yaml
+      - infra/k8s/nats-depl.yaml
+      - infra/k8s/secrets.yaml
+      - infra/k8s/ingress-srv.yaml

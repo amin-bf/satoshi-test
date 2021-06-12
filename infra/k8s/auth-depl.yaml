@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: satoshi-auth-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: satoshi-auth
+  template:
+    metadata:
+      labels:
+        app: satoshi-auth
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: satoshi-auth
+          image: satoshi_auth:0.0.1
+          env:
+            - name: NATS_URL
+              value: "http://satoshi-nats-srv:4222"
+            - name: NATS_CLUSTER_ID
+              value: satoshi
+            - name: NATS_CLIENT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: satoshi-secrets
+                  key: JWT_SECRET
+            - name: APP_URL
+              value: "https://satoshi.vgdesign.ir/"
+            - name: ENV
+              value: "development"
+            - name: DB_HOST
+              value: "satoshi-auth-mongo-srv"
+            - name: DB_PORT
+              value: "27017"
+            - name: DB_NAME
+              value: "auth_db"
+            - name: DB_USER
+              value: "auth_dbu"
+            - name: DB_PASSWORD
+              value: "S3cr3tPasvv0rd"
+          volumeMounts:
+            - mountPath: /usr/src/auth
+              name: auth-vol
+      volumes:
+        - name: auth-vol
+          hostPath:
+            path: /home/amin/projects/environments/satoshi/src/auth
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: satoshi-auth-srv
+spec:
+  selector:
+    app: satoshi-auth
+  type: ClusterIP
+  ports:
+    - name: satoshi-auth
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
